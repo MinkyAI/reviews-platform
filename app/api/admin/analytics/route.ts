@@ -253,9 +253,7 @@ export async function GET(request: NextRequest) {
         count: item._count.rating
       })),
       topPerformingClients: await prisma.client.findMany({
-        select: {
-          id: true,
-          name: true,
+        include: {
           _count: {
             select: {
               reviewSubmissions: true
@@ -268,7 +266,11 @@ export async function GET(request: NextRequest) {
           }
         },
         take: 5
-      })
+      }).then(clients => clients.map(client => ({
+        id: client.id,
+        name: client.name,
+        reviewCount: client._count.reviewSubmissions
+      })))
     }
 
     return NextResponse.json(analytics)

@@ -26,6 +26,7 @@ interface QRCodeData {
   label: string;
   status: 'active' | 'archived';
   batchId?: string;
+  clientId: string;
   createdAt: string;
   updatedAt: string;
   client: {
@@ -66,6 +67,7 @@ export default function QRCodesPage() {
   const [batches, setBatches] = useState<BatchData[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingQRCodes, setIsLoadingQRCodes] = useState(false);
   const [showGenerator, setShowGenerator] = useState(false);
   const [selectedClient, setSelectedClient] = useState<string>('');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
@@ -113,35 +115,72 @@ export default function QRCodesPage() {
   };
   
   const loadQRCodes = async (clientId?: string) => {
+    setIsLoadingQRCodes(true);
     try {
-      // Don't make the request if no client is selected
       const targetClientId = clientId || selectedClient;
-      if (!targetClientId) {
-        setQrCodes([]);
-        return;
+      
+      // Build URL - if no client selected, fetch all
+      let url = '/api/admin/qr-codes/export';
+      if (targetClientId && targetClientId !== '') {
+        url += `?clientId=${targetClientId}`;
       }
       
-      let url = `/api/admin/qr-codes/export?clientId=${targetClientId}`;
-      
+      console.log('Loading QR codes:', url);
       const response = await fetch(url);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('QR codes received:', data.qrCodes?.length || 0);
         setQrCodes(data.qrCodes || []);
+      } else {
+        console.error('Failed to load QR codes');
+        setQrCodes([]);
       }
     } catch (error) {
       console.error('Error loading QR codes:', error);
+      setQrCodes([]);
+    } finally {
+      setIsLoadingQRCodes(false);
     }
   };
   
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && clients.length > 0) {
       loadQRCodes();
+      // Load batches based on selection
+      loadBatches();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedClient]);
+  }, [selectedClient, clients]);
+  
+  const loadBatches = async () => {
+    try {
+      if (!selectedClient || selectedClient === '') {
+        // Load batches from all clients
+        const allBatches: BatchData[] = [];
+        for (const client of clients) {
+          const response = await fetch(`/api/admin/qr-codes/generate?clientId=${client.id}`);
+          if (response.ok) {
+            const data = await response.json();
+            allBatches.push(...(data.batches || []));
+          }
+        }
+        setBatches(allBatches);
+      } else {
+        // Load batches for specific client
+        const response = await fetch(`/api/admin/qr-codes/generate?clientId=${selectedClient}`);
+        if (response.ok) {
+          const data = await response.json();
+          setBatches(data.batches || []);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading batches:', error);
+    }
+  };
   
   const filteredQRCodes = qrCodes.filter(qr => {
-    const matchesClient = !selectedClient || qr.client.name === selectedClient;
+    const matchesClient = !selectedClient || qr.clientId === selectedClient;
     const matchesStatus = !selectedStatus || qr.status === selectedStatus;
     const matchesSearch = !searchQuery || 
       qr.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -152,7 +191,7 @@ export default function QRCodesPage() {
   });
   
   const filteredBatches = batches.filter(batch => {
-    const matchesClient = !selectedClient || batch.clientName === selectedClient;
+    const matchesClient = !selectedClient || batch.clientId === selectedClient;
     const matchesSearch = !searchQuery || 
       batch.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (batch.locationName && batch.locationName.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -251,11 +290,13 @@ export default function QRCodesPage() {
     }
   };
   
+  // Calculate stats based on filtered QR codes
+  const displayedQRCodes = viewMode === 'codes' ? filteredQRCodes : qrCodes;
   const stats = {
-    totalCodes: qrCodes.length,
-    activeCodes: qrCodes.filter(qr => qr.status === 'active').length,
-    totalScans: qrCodes.reduce((sum, qr) => sum + qr.stats.totalScans, 0),
-    totalSubmissions: qrCodes.reduce((sum, qr) => sum + qr.stats.totalSubmissions, 0)
+    totalCodes: displayedQRCodes.length,
+    activeCodes: displayedQRCodes.filter(qr => qr.status === 'active').length,
+    totalScans: displayedQRCodes.reduce((sum, qr) => sum + qr.stats.totalScans, 0),
+    totalSubmissions: displayedQRCodes.reduce((sum, qr) => sum + qr.stats.totalSubmissions, 0)
   };
   
   return (
@@ -391,7 +432,7 @@ export default function QRCodesPage() {
             </div>
           </div>
           
-          {isLoading ? (
+          {isLoading || isLoadingQRCodes ? (
             <div className="flex items-center justify-center py-16">
               <div className="w-8 h-8 border-2 border-[#007AFF] border-t-transparent rounded-full animate-spin"></div>
             </div>

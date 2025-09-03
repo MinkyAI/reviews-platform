@@ -172,21 +172,16 @@ export async function GET(request: NextRequest) {
     const batchId = searchParams.get('batchId');
     const clientId = searchParams.get('clientId');
     
-    if (!batchId && !clientId) {
-      return NextResponse.json(
-        { error: 'Either batchId or clientId is required' },
-        { status: 400 }
-      );
-    }
-    
+    // Build where clause - if no parameters, get all QR codes
     const whereClause: Record<string, unknown> = {};
     
     if (batchId) {
       whereClause.batchId = batchId;
     }
-    if (clientId) {
+    if (clientId && clientId !== 'all') {
       whereClause.clientId = clientId;
     }
+    // If no parameters or clientId === 'all', whereClause remains empty to fetch all
     
     const qrCodes = await prisma.qrCode.findMany({
       where: whereClause,
@@ -227,6 +222,7 @@ export async function GET(request: NextRequest) {
       label: qr.label,
       status: qr.status,
       batchId: qr.batchId,
+      clientId: qr.clientId,
       createdAt: qr.createdAt,
       url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/r/${qr.shortCode}`,
       client: qr.client,

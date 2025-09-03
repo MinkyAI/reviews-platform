@@ -81,22 +81,28 @@ export default function QRCodesPage() {
     setIsLoading(true);
     
     try {
-      const [clientsRes, batchesRes] = await Promise.all([
-        fetch('/api/admin/clients'),
-        fetch('/api/admin/qr-codes/generate')
-      ]);
+      const clientsRes = await fetch('/api/admin/clients');
       
       if (clientsRes.ok) {
         const clientsData = await clientsRes.json();
         setClients(clientsData.clients || []);
+        
+        // Only try to fetch batches if we have clients
+        if (clientsData.clients && clientsData.clients.length > 0) {
+          const firstClientId = clientsData.clients[0].id;
+          setSelectedClient(firstClientId); // Set the first client as selected
+          
+          const batchesRes = await fetch(`/api/admin/qr-codes/generate?clientId=${firstClientId}`);
+          
+          if (batchesRes.ok) {
+            const batchesData = await batchesRes.json();
+            setBatches(batchesData.batches || []);
+          }
+          
+          // Load QR codes for the first client
+          await loadQRCodes(firstClientId);
+        }
       }
-      
-      if (batchesRes.ok) {
-        const batchesData = await batchesRes.json();
-        setBatches(batchesData.batches || []);
-      }
-      
-      await loadQRCodes();
       
     } catch (error) {
       console.error('Error loading data:', error);
@@ -105,18 +111,16 @@ export default function QRCodesPage() {
     }
   };
   
-  const loadQRCodes = async () => {
+  const loadQRCodes = async (clientId?: string) => {
     try {
-      let url = '/api/admin/qr-codes/export';
-      const params = new URLSearchParams();
-      
-      if (selectedClient) {
-        params.append('clientId', selectedClient);
+      // Don't make the request if no client is selected
+      const targetClientId = clientId || selectedClient;
+      if (!targetClientId) {
+        setQrCodes([]);
+        return;
       }
       
-      if (params.toString()) {
-        url += `?${params.toString()}`;
-      }
+      let url = `/api/admin/qr-codes/export?clientId=${targetClientId}`;
       
       const response = await fetch(url);
       if (response.ok) {

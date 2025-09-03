@@ -1,10 +1,40 @@
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+import { createClient } from '@supabase/supabase-js'
 
 const prisma = new PrismaClient()
 
+// Initialize Supabase Admin Client
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+)
+
 async function main() {
   console.log('🌱 Starting seed...')
+
+  // Create admin user in Supabase Auth
+  const { data: adminUser, error: adminError } = await supabaseAdmin.auth.admin.createUser({
+    email: 'admin@reviewsplatform.com',
+    password: 'admin123!',
+    email_confirm: true,
+    user_metadata: {
+      role: 'admin',
+      full_name: 'Platform Admin'
+    }
+  })
+
+  if (adminError) {
+    console.error('❌ Failed to create admin user:', adminError.message)
+  } else {
+    console.log('✅ Created admin user:', adminUser.user.email)
+  }
 
   // Create a test client (restaurant)
   const hashedPassword = await bcrypt.hash('password123', 10)
@@ -127,12 +157,15 @@ async function main() {
   console.log('✅ Created sample reviews')
   
   console.log('\n🎉 Seed completed successfully!')
+  console.log('\n👥 Admin Login:')
+  console.log('   Email: admin@reviewsplatform.com')
+  console.log('   Password: admin123!')
   console.log('\n📱 Test QR Codes:')
   console.log('   - TEST123 (Table 1)')
   console.log('   - TABLE02 (Table 2)')
   console.log('   - BAR001 (Bar Area)')
   console.log('   - PATIO01 (Outdoor Patio)')
-  console.log('\n🔑 Test Login:')
+  console.log('\n🔑 Client Portal Login:')
   console.log('   Email: test@restaurant.com')
   console.log('   Password: password123')
 }

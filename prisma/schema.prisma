@@ -137,3 +137,44 @@ model CTAClick {
   @@index([submissionId])
   @@index([ctaType])
 }
+
+model AdminUser {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  name          String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime?
+  
+  sessions      AdminSession[]
+  loginAttempts LoginAttempt[]
+  
+  @@index([email])
+}
+
+model AdminSession {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  user      AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([token])
+  @@index([userId])
+}
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  success   Boolean
+  ipAddress String
+  userAgent String?
+  createdAt DateTime @default(now())
+  
+  user      AdminUser? @relation(fields: [email], references: [email])
+  
+  @@index([email, createdAt])
+}

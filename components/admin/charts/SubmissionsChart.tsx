@@ -16,7 +16,7 @@ import {
   Area,
   AreaChart
 } from 'recharts'
-import { Calendar, TrendingUp, Users, MessageSquare } from 'lucide-react'
+import { TrendingUp, Users, MessageSquare } from 'lucide-react'
 
 interface ChartData {
   date: string
@@ -31,7 +31,17 @@ interface SubmissionsChartProps {
   className?: string
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+interface TooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    color: string;
+    dataKey: string;
+    value: number;
+  }>;
+  label?: string | number;
+}
+
+const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
   if (active && payload && payload.length) {
     const date = new Date(label).toLocaleDateString('en-US', { 
       month: 'short', 
@@ -41,7 +51,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return (
       <div className="bg-white border border-[#E5E5E7] rounded-lg shadow-lg p-3">
         <p className="text-sm font-medium text-slate-900 mb-2">{date}</p>
-        {payload.map((entry: any, index: number) => (
+        {payload.map((entry, index: number) => (
           <div key={index} className="flex items-center gap-2 text-sm">
             <div 
               className="w-3 h-3 rounded-full" 
@@ -72,7 +82,7 @@ export default function SubmissionsChart({
         const response = await fetch(`/api/admin/analytics?timeframe=${timeframe}`)
         const data = await response.json()
         
-        const processedData = data.timeSeries.reviews.map((item: any) => {
+        const processedData = data.timeSeries.reviews.map((item: { date: string; count: number }) => {
           const date = new Date(item.date)
           const totalSubmissions = item.count
           

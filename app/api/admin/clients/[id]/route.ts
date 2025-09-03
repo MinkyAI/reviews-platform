@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
-import bcrypt from 'bcryptjs'
+// import bcrypt from 'bcryptjs'
 
 const updateClientSchema = z.object({
   name: z.string().min(2, 'Company name must be at least 2 characters').optional(),
@@ -18,10 +18,10 @@ const updateClientSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const clientId = params.id
+    const { id: clientId } = await params
 
     const client = await prisma.client.findUnique({
       where: { id: clientId },
@@ -141,10 +141,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const clientId = params.id
+    const { id: clientId } = await params
     const body = await request.json()
     const validatedData = updateClientSchema.parse(body)
 
@@ -217,10 +217,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const clientId = params.id
+    const { id: clientId } = await params
     const { searchParams } = new URL(request.url)
     const permanent = searchParams.get('permanent') === 'true'
 

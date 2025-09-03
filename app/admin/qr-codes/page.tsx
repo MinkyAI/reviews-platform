@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, 
   Search, 
-  Filter, 
   Download, 
   Archive, 
   RotateCcw, 
@@ -31,7 +30,7 @@ interface QRCodeData {
   updatedAt: string;
   client: {
     name: string;
-    brandColors?: any;
+    brandColors?: { primary?: string; secondary?: string; };
     logoUrl?: string;
   };
   location?: {
@@ -57,7 +56,7 @@ interface BatchData {
 interface Client {
   id: string;
   name: string;
-  brandColors?: any;
+  brandColors?: { primary?: string; secondary?: string; };
   logoUrl?: string;
 }
 
@@ -75,6 +74,7 @@ export default function QRCodesPage() {
   
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
   const loadData = async () => {
@@ -132,6 +132,7 @@ export default function QRCodesPage() {
     if (!isLoading) {
       loadQRCodes();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClient]);
   
   const filteredQRCodes = qrCodes.filter(qr => {

@@ -186,7 +186,7 @@ export async function GET(request: NextRequest) {
       return ((current - previous) / previous) * 100
     }
 
-    const formatTimeSeries = (data: any[], days: number) => {
+    const formatTimeSeries = (data: Array<{ createdAt: Date | string; _count?: { id: number } }>, days: number) => {
       const dailyData = new Map()
       
       for (let i = 0; i < days; i++) {
@@ -198,7 +198,8 @@ export async function GET(request: NextRequest) {
       data.forEach(item => {
         const dateKey = new Date(item.createdAt).toISOString().split('T')[0]
         if (dailyData.has(dateKey)) {
-          dailyData.set(dateKey, dailyData.get(dateKey) + item._count.id)
+          const count = (item as any)._count?.id || 1
+          dailyData.set(dateKey, dailyData.get(dateKey) + count)
         }
       })
 

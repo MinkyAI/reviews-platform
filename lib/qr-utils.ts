@@ -75,7 +75,7 @@ export async function generateQRCode(
 export async function generateQRCodeBatch(
   options: QRBatchOptions
 ): Promise<QRCodeData[]> {
-  const batchId = options.batchId || nanoid(12);
+  // const batchId = options.batchId || nanoid(12);
   const qrCodes: QRCodeData[] = [];
   
   for (let i = 1; i <= options.count; i++) {
@@ -136,14 +136,14 @@ export async function generateQRCodesPDF(
   const pageHeight = pdf.internal.pageSize.height;
   const margin = 20;
   const contentWidth = pageWidth - (margin * 2);
-  const contentHeight = pageHeight - (margin * 2);
+  // const contentHeight = pageHeight - (margin * 2);
   
   const qrSize = (contentWidth - (options.codesPerRow - 1) * 10) / options.codesPerRow;
   const labelHeight = options.includeLabel ? 8 : 0;
   const urlHeight = options.includeUrl ? 6 : 0;
   const cellHeight = qrSize + labelHeight + urlHeight + 10;
   
-  let currentPage = 0;
+  // let currentPage = 0;
   let currentRow = 0;
   let currentCol = 0;
   
@@ -152,7 +152,7 @@ export async function generateQRCodesPDF(
     
     if (i > 0 && i % options.codesPerPage === 0) {
       pdf.addPage();
-      currentPage++;
+      // currentPage++;
       currentRow = 0;
       currentCol = 0;
     }

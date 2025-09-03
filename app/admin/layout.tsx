@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Sidebar from '@/components/admin/Sidebar'
 import TopBar from '@/components/admin/TopBar'
-import { useDashboardStore } from '@/lib/stores/dashboard'
+// import { useDashboardStore } from '@/lib/stores/dashboard'
 
 interface User {
   id: string
@@ -21,7 +21,7 @@ export default function Layout({ children }: AdminLayoutProps) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
-  const { sidebarOpen, isMobile } = useDashboardStore()
+  // const { sidebarOpen, isMobile } = useDashboardStore()
 
   useEffect(() => {
     const fetchSession = async () => {

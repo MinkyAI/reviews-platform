@@ -5,9 +5,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, QrCode, Copy, Check, Settings, X, Grid, FileImage, FileText } from 'lucide-react';
+import { QrCode, Copy, Check, X, Grid, FileImage, FileText } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { downloadFile } from '@/lib/qr-utils';
+// import { downloadFile } from '@/lib/qr-utils';
 
 const generateFormSchema = z.object({
   clientId: z.string().min(1, 'Please select a client'),
@@ -39,7 +39,7 @@ interface QRCodeData {
 interface Client {
   id: string;
   name: string;
-  brandColors?: any;
+  brandColors?: { primary?: string; secondary?: string; };
   logoUrl?: string;
 }
 
@@ -376,6 +376,7 @@ export default function QRCodeGenerator({ clients, onSuccess }: QRCodeGeneratorP
                 >
                   <div className="text-center mb-4">
                     {qrCode.qrCodeDataUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={qrCode.qrCodeDataUrl}
                         alt={`QR Code for ${qrCode.label}`}

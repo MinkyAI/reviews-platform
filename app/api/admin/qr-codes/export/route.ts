@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    let whereClause: any = { clientId };
+    const whereClause: Record<string, unknown> = { clientId };
     
     if (batchId) {
       whereClause.batchId = batchId;
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
           type: 'image/png',
           width: 256,
           color: client.brandColors ? {
-            dark: (client.brandColors as any)?.primary || '#000000',
+            dark: (client.brandColors as Record<string, string>)?.primary || '#000000',
             light: '#FFFFFF'
           } : undefined
         });
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
       includeUrl,
       includeLabel,
       brandColors: client.brandColors ? {
-        primary: (client.brandColors as any)?.primary
+        primary: (client.brandColors as Record<string, string>)?.primary
       } : undefined,
       logo: client.logoUrl || undefined
     };
@@ -179,7 +179,7 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    let whereClause: any = {};
+    const whereClause: Record<string, unknown> = {};
     
     if (batchId) {
       whereClause.batchId = batchId;

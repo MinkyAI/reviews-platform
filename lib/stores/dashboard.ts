@@ -32,7 +32,7 @@ interface DashboardStore {
 
 export const useDashboardStore = create<DashboardStore>()(
   devtools(
-    (set, get) => ({
+    (set) => ({
       sidebarOpen: true,
       selectedClient: null,
       activeNavItem: 'dashboard',

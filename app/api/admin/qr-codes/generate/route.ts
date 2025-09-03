@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { nanoid } from 'nanoid';
-import { generateQRCodeBatch, QRCodeData, validateQRCodeData } from '@/lib/qr-utils';
+import { generateQRCodeBatch, validateQRCodeData } from '@/lib/qr-utils';
 import { z } from 'zod';
 
 const prisma = new PrismaClient();
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     }
     
     const batchId = nanoid(12);
-    const qrCodeData: QRCodeData[] = [];
+    // const qrCodeData: QRCodeData[] = [];
     
     try {
       const generatedCodes = await generateQRCodeBatch({

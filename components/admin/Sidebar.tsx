@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   BarChart3, 
@@ -118,8 +119,26 @@ export default function Sidebar() {
     activeNavItem, 
     setActiveNavItem,
     selectedClient,
-    clients 
+    clients,
+    setClients 
   } = useDashboardStore()
+
+  // Fetch real clients from database
+  React.useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const response = await fetch('/api/admin/clients/list')
+        const data = await response.json()
+        if (data.clients) {
+          setClients(data.clients)
+        }
+      } catch (error) {
+        console.error('Failed to fetch clients:', error)
+      }
+    }
+    fetchClients()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <>

@@ -30,7 +30,7 @@ export default function TopBar({ user, onLogout }: TopBarProps) {
   const { 
     searchQuery, 
     setSearchQuery, 
-    sidebarOpen, 
+    // sidebarOpen, 
     toggleSidebar, 
     isMobile, 
     setIsMobile,

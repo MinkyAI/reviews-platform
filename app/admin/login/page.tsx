@@ -59,7 +59,7 @@ export default function AdminLoginPage() {
 
       router.push('/admin')
       router.refresh()
-    } catch (err) {
+    } catch {
       setError('Network connection error. Please check your internet and try again.')
     } finally {
       setIsLoading(false)

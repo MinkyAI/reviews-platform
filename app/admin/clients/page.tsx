@@ -2,18 +2,19 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Plus, Search, Filter, Download, Users, MoreHorizontal, Edit, Archive, Eye } from 'lucide-react'
+import { Plus, Search, Filter, Download, Users, Archive } from 'lucide-react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { ClientModal } from '@/components/admin/modals/ClientModal'
 import { ClientsTable } from '@/components/admin/ClientsTable'
 
 type ClientStatus = 'all' | 'active' | 'inactive' | 'pending'
+type ActualClientStatus = 'active' | 'inactive' | 'pending'
 
 interface Client {
   id: string
   name: string
   email: string
-  status: ClientStatus
+  status: ActualClientStatus
   qrCodeCount: number
   locationCount: number
   reviewCount: number
@@ -68,6 +69,7 @@ export default function ClientsPage() {
 
   useEffect(() => {
     fetchClients()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pagination.page, searchQuery, statusFilter])
 
   const handleSearch = (query: string) => {

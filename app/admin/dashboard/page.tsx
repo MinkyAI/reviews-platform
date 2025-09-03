@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { useState, useEffect } from 'react'
-import { Shield, Users, QrCode, BarChart3, Activity, Clock, Star, TrendingUp } from 'lucide-react'
+import { Shield, Users, QrCode, Activity, Clock, Star, TrendingUp } from 'lucide-react'
 import DashboardMetrics from '@/components/admin/DashboardMetrics'
 import SubmissionsChart from '@/components/admin/charts/SubmissionsChart'
 
@@ -24,7 +24,7 @@ interface TopClient {
 }
 
 export default function AdminDashboard() {
-  const [timeframe, setTimeframe] = useState('30d')
+  const [timeframe] = useState('30d')
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([])
   const [topClients, setTopClients] = useState<TopClient[]>([])
 
@@ -145,7 +145,7 @@ export default function AdminDashboard() {
       >
         <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
         <p className="text-slate-500 mt-2">
-          Welcome back! Here's what's happening with your reviews platform.
+          Welcome back! Here&apos;s what&apos;s happening with your reviews platform.
         </p>
       </motion.div>
 

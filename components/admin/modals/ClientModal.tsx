@@ -33,7 +33,7 @@ interface ClientModalProps {
     contactPhone?: string
     googlePlaceId?: string
   } | null
-  onSuccess: (client: any) => void
+  onSuccess: (client: { id: string; name: string; email: string }) => void
 }
 
 export function ClientModal({ open, onOpenChange, client, onSuccess }: ClientModalProps) {
@@ -47,7 +47,7 @@ export function ClientModal({ open, onOpenChange, client, onSuccess }: ClientMod
     formState: { errors },
     watch,
     reset,
-    setValue,
+    // setValue,
   } = useForm<ClientFormData>({
     resolver: zodResolver(clientFormSchema),
     defaultValues: {

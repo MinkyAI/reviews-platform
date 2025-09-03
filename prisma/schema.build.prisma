@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = "postgresql://user:password@localhost:5432/db"
+}
+
+enum QrCodeStatus {
+  active
+  archived
+}
+
+enum ReviewChannel {
+  google
+  trustpilot
+  yelp
+  facebook
+  direct
+}
+
+model Client {
+  id             String       @id @default(cuid())
+  name           String
+  email          String       @unique
+  password       String
+  contactEmail   String?
+  contactPhone   String?
+  googlePlaceId  String?
+  logoUrl        String?
+  brandColors    Json?
+  status         String       @default("active")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  qrCodes        QrCode[]
+  locations      Location[]
+  submissions    Submission[]
+  analytics      Analytics[]
+}
+
+model Location {
+  id        String       @id @default(cuid())
+  name      String
+  address   String?
+  city      String?
+  country   String?
+  clientId  String
+  client    Client       @relation(fields: [clientId], references: [id])
+  qrCodes   QrCode[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+model QrCode {
+  id          String       @id @default(cuid())
+  shortCode   String       @unique
+  label       String
+  status      QrCodeStatus @default(active)
+  clientId    String
+  locationId  String?
+  batchId     String?
+  client      Client       @relation(fields: [clientId], references: [id])
+  location    Location?    @relation(fields: [locationId], references: [id])
+  submissions Submission[]
+  analytics   Analytics[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Submission {
+  id               String        @id @default(cuid())
+  qrCodeId         String
+  clientId         String
+  sessionId        String
+  deviceInfo       Json?
+  location         Json?
+  reviewChannel    ReviewChannel?
+  rating           Int?
+  feedback         String?
+  hasClickthrough  Boolean       @default(false)
+  createdAt        DateTime      @default(now())
+  qrCode           QrCode        @relation(fields: [qrCodeId], references: [id])
+  client           Client        @relation(fields: [clientId], references: [id])
+}
+
+model Analytics {
+  id               String   @id @default(cuid())
+  qrCodeId         String
+  clientId         String
+  eventType        String
+  eventData        Json?
+  deviceInfo       Json?
+  location         Json?
+  sessionId        String?
+  createdAt        DateTime @default(now())
+  qrCode           QrCode   @relation(fields: [qrCodeId], references: [id])
+  client           Client   @relation(fields: [clientId], references: [id])
+  
+  @@index([createdAt])
+  @@index([clientId, createdAt])
+  @@index([qrCodeId, createdAt])
+}

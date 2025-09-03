@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "prisma generate && next build --turbopack",
-    "vercel-build": "prisma generate && prisma db push && next build --turbopack",
+    "vercel-build": "if [ -z \"$DATABASE_URL\" ]; then echo 'Using build schema' && prisma generate --schema=./prisma/schema.build.prisma; else prisma generate; fi && next build --turbopack",
+    "postinstall": "prisma generate || true",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",

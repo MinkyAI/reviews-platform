@@ -1,0 +1,84 @@
+{
+  "projectName": "Reviews Platform",
+  "description": "3-part Reviews Management Platform with QR code flow",
+  "contexts": [
+    {
+      "id": "main",
+      "name": "Main Context",
+      "description": "Primary context for the Reviews Platform",
+      "include": [
+        "*.md",
+        "package.json",
+        "tsconfig.json",
+        "next.config.ts",
+        "app/**/*.{ts,tsx}",
+        "components/**/*.{ts,tsx}",
+        "lib/**/*.{ts,tsx}",
+        "types/**/*.ts",
+        "prisma/schema.prisma"
+      ],
+      "exclude": [
+        "node_modules/**",
+        ".next/**",
+        "dist/**",
+        ".git/**"
+      ],
+      "priority": 1
+    },
+    {
+      "id": "landing",
+      "name": "Reviews Landing",
+      "description": "End-user QR code flow (mobile-first)",
+      "include": [
+        "app/(landing)/**",
+        "components/landing/**",
+        "types/landing.ts"
+      ],
+      "priority": 2
+    },
+    {
+      "id": "admin",
+      "name": "Admin Dashboard",
+      "description": "Owner control panel (multi-client management)",
+      "include": [
+        "app/(admin)/**",
+        "components/admin/**",
+        "types/admin.ts"
+      ],
+      "priority": 2
+    },
+    {
+      "id": "client",
+      "name": "Client Portal",
+      "description": "Restaurant dashboard (read-only analytics)",
+      "include": [
+        "app/(client)/**",
+        "components/client/**",
+        "types/client.ts"
+      ],
+      "priority": 2
+    }
+  ],
+  "rules": [
+    {
+      "pattern": "**/*.test.{ts,tsx}",
+      "context": "test",
+      "priority": 3
+    },
+    {
+      "pattern": "**/*.spec.{ts,tsx}",
+      "context": "test",
+      "priority": 3
+    }
+  ],
+  "memory": {
+    "enabled": true,
+    "maxSize": "10MB",
+    "location": ".mcp-memory"
+  },
+  "ai": {
+    "model": "claude-opus-4-1",
+    "temperature": 0.7,
+    "maxTokens": 4096
+  }
+}

@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum QrCodeStatus {
+  active
+  archived
+}
+
+enum ClickedCTA {
+  google_copy
+  google_direct
+  contact
+  none
+}
+
+enum CTAType {
+  google_copy
+  google_direct
+  contact_email
+  contact_phone
+}
+
+model Client {
+  id                String              @id @default(cuid())
+  name              String
+  email             String              @unique
+  password          String
+  googlePlaceId     String?
+  contactEmail      String?
+  contactPhone      String?
+  logoUrl           String?
+  brandColors       Json?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  
+  qrCodes           QrCode[]
+  qrScans           QrScan[]
+  reviewSubmissions ReviewSubmission[]
+  locations         Location[]
+  
+  @@index([email])
+}
+
+model Location {
+  id          String     @id @default(cuid())
+  clientId    String
+  name        String
+  address     String?
+  city        String?
+  country     String?
+  postalCode  String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  
+  client      Client     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  qrCodes     QrCode[]
+  
+  @@index([clientId])
+}
+
+model QrCode {
+  id                String              @id @default(cuid())
+  clientId          String
+  locationId        String?
+  label             String
+  shortCode         String              @unique
+  batchId           String?
+  status            QrCodeStatus        @default(active)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  
+  client            Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  location          Location?           @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  qrScans           QrScan[]
+  reviewSubmissions ReviewSubmission[]
+  
+  @@index([clientId, status])
+  @@index([shortCode])
+  @@index([batchId])
+}
+
+model QrScan {
+  id                String              @id @default(cuid())
+  qrId              String
+  clientId          String
+  sessionId         String
+  scanTimestamp     DateTime            @default(now())
+  userAgent         String?
+  ipHash            String?
+  createdAt         DateTime            @default(now())
+  
+  qrCode            QrCode              @relation(fields: [qrId], references: [id], onDelete: Cascade)
+  client            Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  reviewSubmissions ReviewSubmission[]
+  
+  @@index([qrId, createdAt])
+  @@index([sessionId])
+}
+
+model ReviewSubmission {
+  id             String      @id @default(cuid())
+  qrId           String
+  clientId       String
+  scanId         String
+  rating         Int
+  comment        String?     @db.Text
+  googleClicked  Boolean     @default(false)
+  contactClicked Boolean     @default(false)
+  clickedCTA     ClickedCTA  @default(none)
+  createdAt      DateTime    @default(now())
+  
+  qrCode         QrCode      @relation(fields: [qrId], references: [id], onDelete: Cascade)
+  client         Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  scan           QrScan      @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  ctaClicks      CTAClick[]
+  
+  @@index([clientId, createdAt, rating])
+  @@index([qrId])
+  @@index([rating])
+}
+
+model CTAClick {
+  id           String           @id @default(cuid())
+  submissionId String
+  ctaType      CTAType
+  clickedAt    DateTime         @default(now())
+  
+  submission   ReviewSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  
+  @@index([submissionId])
+  @@index([ctaType])
+}

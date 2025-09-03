@@ -20,6 +20,20 @@ enum ReviewChannel {
   direct
 }
 
+enum ClickedCTA {
+  google_copy
+  google_direct
+  contact
+  none
+}
+
+enum CTAType {
+  google_copy
+  google_direct
+  contact_email
+  contact_phone
+}
+
 model Client {
   id             String       @id @default(cuid())
   name           String
@@ -69,44 +83,48 @@ model QrCode {
 }
 
 model ReviewSubmission {
-  id               String        @id @default(cuid())
-  qrCodeId         String
-  clientId         String
-  sessionId        String
-  deviceInfo       Json?
-  location         Json?
-  reviewChannel    ReviewChannel?
-  rating           Int?
-  feedback         String?
-  hasClickthrough  Boolean       @default(false)
-  createdAt        DateTime      @default(now())
-  qrCode           QrCode        @relation(fields: [qrCodeId], references: [id])
-  client           Client        @relation(fields: [clientId], references: [id])
+  id             String      @id @default(cuid())
+  qrId           String
+  clientId       String
+  scanId         String
+  rating         Int
+  comment        String?
+  googleClicked  Boolean     @default(false)
+  contactClicked Boolean     @default(false)
+  clickedCTA     ClickedCTA  @default(none)
+  createdAt      DateTime    @default(now())
+  
+  qrCode         QrCode      @relation(fields: [qrId], references: [id])
+  client         Client      @relation(fields: [clientId], references: [id])
+  scan           QrScan      @relation(fields: [scanId], references: [id])
+  ctaClicks      CTAClick[]
 }
 
 model QrScan {
   id               String   @id @default(cuid())
-  qrCodeId         String
+  qrId             String
   clientId         String
-  eventType        String
-  eventData        Json?
-  deviceInfo       Json?
-  location         Json?
-  sessionId        String?
+  sessionId        String
+  userAgent        String?
+  ipHash           String?
   createdAt        DateTime @default(now())
-  qrCode           QrCode   @relation(fields: [qrCodeId], references: [id])
+  
+  qrCode           QrCode   @relation(fields: [qrId], references: [id])
   client           Client   @relation(fields: [clientId], references: [id])
+  submissions      ReviewSubmission[]
   
   @@index([createdAt])
   @@index([clientId, createdAt])
-  @@index([qrCodeId, createdAt])
+  @@index([qrId, createdAt])
 }
 
 model CTAClick {
   id           String   @id @default(cuid())
   submissionId String
-  ctaType      String
+  ctaType      CTAType
   createdAt    DateTime @default(now())
+  
+  submission   ReviewSubmission @relation(fields: [submissionId], references: [id])
 }
 
 model AdminUser {

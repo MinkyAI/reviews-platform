@@ -258,13 +258,7 @@ export async function GET(request: NextRequest) {
           name: true,
           _count: {
             select: {
-              reviewSubmissions: {
-                where: {
-                  createdAt: {
-                    gte: startDate
-                  }
-                }
-              }
+              reviewSubmissions: true
             }
           }
         },

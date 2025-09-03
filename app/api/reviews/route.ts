@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     const ip = forwarded ? forwarded.split(',')[0] : '127.0.0.1'
     const ipHash = hashIP(ip)
 
-    const scan = await prisma.qrScan.create({
+    const scan = await prisma.analytics.create({
       data: {
         qrId: qrCode.id,
         clientId: qrCode.clientId,
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
       }
     })
 
-    const submission = await prisma.reviewSubmission.create({
+    const submission = await prisma.submission.create({
       data: {
         qrId: qrCode.id,
         clientId: qrCode.clientId,

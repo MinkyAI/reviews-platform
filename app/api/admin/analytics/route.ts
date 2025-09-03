@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       reviewTimeSeries,
       ratingDistribution
     ] = await Promise.all([
-      prisma.qrScan.count({
+      prisma.analytics.count({
         where: {
           createdAt: {
             gte: startDate
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
         }
       }),
       
-      prisma.qrScan.count({
+      prisma.analytics.count({
         where: {
           createdAt: {
             gte: previousStartDate,
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
         }
       }),
 
-      prisma.reviewSubmission.count({
+      prisma.submission.count({
         where: {
           createdAt: {
             gte: startDate
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
         }
       }),
 
-      prisma.reviewSubmission.count({
+      prisma.submission.count({
         where: {
           createdAt: {
             gte: previousStartDate,
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
         }
       }),
 
-      prisma.reviewSubmission.aggregate({
+      prisma.submission.aggregate({
         where: {
           createdAt: {
             gte: startDate
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
         }
       }),
 
-      prisma.reviewSubmission.aggregate({
+      prisma.submission.aggregate({
         where: {
           createdAt: {
             gte: previousStartDate,
@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
         }
       }),
 
-      prisma.reviewSubmission.aggregate({
+      prisma.submission.aggregate({
         where: {
           createdAt: {
             gte: startDate
@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
         }
       }),
 
-      prisma.reviewSubmission.aggregate({
+      prisma.submission.aggregate({
         where: {
           createdAt: {
             gte: previousStartDate,
@@ -129,7 +129,7 @@ export async function GET(request: NextRequest) {
         }
       }),
 
-      prisma.qrScan.groupBy({
+      prisma.analytics.groupBy({
         by: ['createdAt'],
         where: {
           createdAt: {
@@ -144,7 +144,7 @@ export async function GET(request: NextRequest) {
         }
       }),
 
-      prisma.reviewSubmission.groupBy({
+      prisma.submission.groupBy({
         by: ['createdAt'],
         where: {
           createdAt: {
@@ -159,7 +159,7 @@ export async function GET(request: NextRequest) {
         }
       }),
 
-      prisma.reviewSubmission.groupBy({
+      prisma.submission.groupBy({
         by: ['rating'],
         where: {
           createdAt: {

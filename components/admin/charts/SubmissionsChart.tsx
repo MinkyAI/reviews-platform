@@ -82,6 +82,11 @@ export default function SubmissionsChart({
         const response = await fetch(`/api/admin/analytics?timeframe=${timeframe}`)
         const data = await response.json()
         
+        if (!data || !data.timeSeries || !data.timeSeries.reviews) {
+          setSubmissionData([])
+          return
+        }
+        
         const processedData = data.timeSeries.reviews.map((item: { date: string; count: number }) => {
           const date = new Date(item.date)
           const totalSubmissions = item.count
@@ -106,6 +111,7 @@ export default function SubmissionsChart({
         setChartData(processedData)
       } catch (error) {
         console.error('Failed to fetch submissions data:', error)
+        setChartData([])
       } finally {
         setLoading(false)
       }

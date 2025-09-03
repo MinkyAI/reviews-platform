@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Plus, Search, Filter, Download, Users, Archive } from 'lucide-react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
@@ -43,13 +43,14 @@ export default function ClientsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingClient, setEditingClient] = useState<Client | null>(null)
   const [selectedClients, setSelectedClients] = useState<string[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
 
-  const fetchClients = async () => {
+  const fetchClients = useCallback(async (page: number = 1) => {
     setIsLoading(true)
     try {
       const params = new URLSearchParams({
-        page: pagination.page.toString(),
-        limit: pagination.limit.toString(),
+        page: page.toString(),
+        limit: '10',
         ...(searchQuery && { search: searchQuery }),
         ...(statusFilter !== 'all' && { status: statusFilter }),
       })
@@ -58,28 +59,29 @@ export default function ClientsPage() {
       if (!response.ok) throw new Error('Failed to fetch clients')
 
       const data = await response.json()
-      setClients(data.clients)
-      setPagination(data.pagination)
+      setClients(data.clients || [])
+      setPagination(data.pagination || { page, limit: 10, total: 0, pages: 0 })
     } catch (error) {
       console.error('Failed to fetch clients:', error)
+      setClients([])
+      setPagination({ page, limit: 10, total: 0, pages: 0 })
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [searchQuery, statusFilter])
 
   useEffect(() => {
-    fetchClients()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.page, searchQuery, statusFilter])
+    fetchClients(currentPage)
+  }, [fetchClients, currentPage])
 
   const handleSearch = (query: string) => {
     setSearchQuery(query)
-    setPagination(prev => ({ ...prev, page: 1 }))
+    setCurrentPage(1)
   }
 
   const handleStatusFilter = (status: ClientStatus) => {
     setStatusFilter(status)
-    setPagination(prev => ({ ...prev, page: 1 }))
+    setCurrentPage(1)
   }
 
   const handleClientCreated = (newClient: Client) => {
@@ -129,7 +131,7 @@ export default function ClientsPage() {
 
       setClients(prev => prev.filter(client => !selectedClients.includes(client.id)))
       setSelectedClients([])
-      fetchClients()
+      fetchClients(currentPage)
     } catch (error) {
       console.error('Failed to archive clients:', error)
       alert('Some clients could not be archived. Please try again.')
@@ -334,7 +336,7 @@ export default function ClientsPage() {
         clients={clients}
         isLoading={isLoading}
         pagination={pagination}
-        onPageChange={(page) => setPagination(prev => ({ ...prev, page }))}
+        onPageChange={(page) => setCurrentPage(page)}
         selectedClients={selectedClients}
         onSelectedClientsChange={setSelectedClients}
         onEditClient={handleEditClient}

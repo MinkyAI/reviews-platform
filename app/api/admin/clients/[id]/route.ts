@@ -83,7 +83,7 @@ export async function GET(
       )
     }
 
-    const recentReviews = await prisma.submission.findMany({
+    const recentReviews = await prisma.reviewSubmission.findMany({
       where: { clientId },
       select: {
         id: true,

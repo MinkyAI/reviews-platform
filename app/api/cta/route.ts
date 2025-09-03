@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const validated = ctaClickSchema.parse(body)
 
-    const submission = await prisma.submission.findUnique({
+    const submission = await prisma.reviewSubmission.findUnique({
       where: { id: validated.submissionId }
     })
 
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
           ctaType: validated.ctaType
         }
       }),
-      prisma.submission.update({
+      prisma.reviewSubmission.update({
         where: { id: validated.submissionId },
         data: {
           googleClicked: validated.ctaType === 'google_copy' || validated.ctaType === 'google_direct' || submission.googleClicked,

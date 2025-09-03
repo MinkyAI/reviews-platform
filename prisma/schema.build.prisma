@@ -35,8 +35,8 @@ model Client {
   updatedAt      DateTime     @updatedAt
   qrCodes        QrCode[]
   locations      Location[]
-  submissions    Submission[]
-  analytics      Analytics[]
+  submissions    ReviewSubmission[]
+  scans          QrScan[]
 }
 
 model Location {
@@ -62,13 +62,13 @@ model QrCode {
   batchId     String?
   client      Client       @relation(fields: [clientId], references: [id])
   location    Location?    @relation(fields: [locationId], references: [id])
-  submissions Submission[]
-  analytics   Analytics[]
+  submissions ReviewSubmission[]
+  scans       QrScan[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 }
 
-model Submission {
+model ReviewSubmission {
   id               String        @id @default(cuid())
   qrCodeId         String
   clientId         String
@@ -84,7 +84,7 @@ model Submission {
   client           Client        @relation(fields: [clientId], references: [id])
 }
 
-model Analytics {
+model QrScan {
   id               String   @id @default(cuid())
   qrCodeId         String
   clientId         String
@@ -100,4 +100,35 @@ model Analytics {
   @@index([createdAt])
   @@index([clientId, createdAt])
   @@index([qrCodeId, createdAt])
+}
+
+model CTAClick {
+  id           String   @id @default(cuid())
+  submissionId String
+  ctaType      String
+  createdAt    DateTime @default(now())
+}
+
+model AdminUser {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AdminSession {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  ipAddress String
+  success   Boolean
+  createdAt DateTime @default(now())
 }

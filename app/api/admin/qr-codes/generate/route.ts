@@ -199,7 +199,7 @@ export async function GET(request: NextRequest) {
           }
         });
         
-        const totalScans = await prisma.analytics.count({
+        const totalScans = await prisma.qrScan.count({
           where: {
             qrCode: {
               batchId: batch.batchId

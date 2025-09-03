@@ -16,6 +16,7 @@ export async function GET() {
         contactEmail: true,
         contactPhone: true,
         createdAt: true,
+        updatedAt: true,
         _count: {
           select: {
             qrCodes: true,
@@ -28,10 +29,25 @@ export async function GET() {
       orderBy: { name: 'asc' }
     });
     
+    // Add derived fields for the UI
+    const clientsWithStatus = clients.map(client => ({
+      ...client,
+      status: client._count.qrCodes > 0 ? 'active' : 'pending',
+      qrCodeCount: client._count.qrCodes,
+      locationCount: client._count.locations,
+      reviewCount: client._count.reviewSubmissions,
+      lastActivity: new Date(client.updatedAt || client.createdAt).toLocaleDateString()
+    }));
+    
     return NextResponse.json({
       success: true,
-      clients,
-      count: clients.length
+      clients: clientsWithStatus,
+      pagination: {
+        page: 1,
+        limit: 10,
+        total: clientsWithStatus.length,
+        pages: Math.ceil(clientsWithStatus.length / 10)
+      }
     });
     
   } catch (error) {

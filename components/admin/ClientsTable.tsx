@@ -110,13 +110,16 @@ export function ClientsTable({
         header: 'Status',
         cell: (info) => {
           const status = info.getValue()
+          if (!status) {
+            return <span className="text-gray-400">-</span>
+          }
           const colors = {
             active: 'bg-green-100 text-green-800 border-green-200',
             inactive: 'bg-gray-100 text-gray-800 border-gray-200',
             pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
           }
           return (
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${colors[status]}`}>
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${colors[status] || 'bg-gray-100 text-gray-800 border-gray-200'}`}>
               <div className={`w-2 h-2 rounded-full mr-1.5 ${
                 status === 'active' ? 'bg-green-500' : 
                 status === 'pending' ? 'bg-yellow-500' : 'bg-gray-400'

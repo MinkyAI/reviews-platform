@@ -65,8 +65,7 @@ async function main() {
       name: 'Main Street Location',
       address: '123 Main St',
       city: 'San Francisco',
-      country: 'USA',
-      postalCode: '94102'
+      country: 'USA'
     }
   })
 

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -54,6 +55,92 @@ export async function GET() {
     console.error('Get clients error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
+      { status: 500 }
+    );
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { name, email, contactEmail, contactPhone, googlePlaceId } = body;
+
+    // Validate required fields
+    if (!name || !email) {
+      return NextResponse.json(
+        { error: 'Name and email are required' },
+        { status: 400 }
+      );
+    }
+
+    // Generate a temporary password
+    const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+
+    // Check if client with email already exists
+    const existingClient = await prisma.client.findUnique({
+      where: { email }
+    });
+
+    if (existingClient) {
+      return NextResponse.json(
+        { error: 'A client with this email already exists' },
+        { status: 400 }
+      );
+    }
+
+    // Hash the temporary password
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+    // Create the new client
+    const newClient = await prisma.client.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        contactEmail: contactEmail || null,
+        contactPhone: contactPhone || null,
+        googlePlaceId: googlePlaceId || null,
+      },
+      include: {
+        _count: {
+          select: {
+            qrCodes: true,
+            qrScans: true,
+            reviewSubmissions: true,
+            locations: true
+          }
+        }
+      }
+    });
+
+    // Format the response
+    const clientResponse = {
+      id: newClient.id,
+      name: newClient.name,
+      email: newClient.email,
+      contactEmail: newClient.contactEmail,
+      contactPhone: newClient.contactPhone,
+      googlePlaceId: newClient.googlePlaceId,
+      status: 'pending',
+      qrCodeCount: newClient._count.qrCodes,
+      locationCount: newClient._count.locations,
+      reviewCount: newClient._count.reviewSubmissions,
+      lastActivity: new Date(newClient.createdAt).toLocaleDateString(),
+      createdAt: newClient.createdAt
+    };
+
+    return NextResponse.json({
+      success: true,
+      client: clientResponse,
+      tempPassword: tempPassword // Send back the temporary password to display to admin
+    }, { status: 201 });
+
+  } catch (error) {
+    console.error('Create client error:', error);
+    return NextResponse.json(
+      { error: 'Failed to create client' },
       { status: 500 }
     );
   } finally {

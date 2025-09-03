@@ -46,6 +46,7 @@ interface QRCodeData {
 interface BatchData {
   batchId: string;
   createdAt: string;
+  clientId: string;
   clientName: string;
   locationName?: string;
   totalCodes: number;
@@ -182,28 +183,52 @@ export default function QRCodesPage() {
     }
   };
   
-  const exportBatch = async (batchId: string) => {
+  const exportBatch = async (batchId: string, clientIdOverride?: string) => {
+    // Use provided clientId, or selectedClient, or first client if "All clients" is selected
+    let clientId = clientIdOverride || selectedClient;
+    
+    // If still no clientId and we have clients, use the first one
+    if (!clientId && clients.length > 0) {
+      clientId = clients[0].id;
+    }
+    
+    console.log('Exporting batch:', batchId, 'Client:', clientId);
     setIsExporting(true);
     
+    if (!clientId) {
+      alert('No clients available. Please create a client first.');
+      setIsExporting(false);
+      return;
+    }
+    
     try {
+      const requestBody = {
+        batchId,
+        clientId,
+        format: 'A4',
+        orientation: 'portrait',
+        codesPerRow: 3,
+        codesPerPage: 9,
+        includeUrl: true,
+        includeLabel: true,
+        exportType: 'pdf'
+      };
+      
+      console.log('Export request body:', requestBody);
+      
       const response = await fetch('/api/admin/qr-codes/export', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          batchId,
-          format: 'A4',
-          orientation: 'portrait',
-          codesPerRow: 3,
-          codesPerPage: 9,
-          includeUrl: true,
-          includeLabel: true
-        })
+        body: JSON.stringify(requestBody)
       });
       
       if (!response.ok) {
-        throw new Error('Failed to export batch');
+        const error = await response.json();
+        console.error('Export error:', error);
+        alert(`Export failed: ${error.error || 'Unknown error'}. ${error.details ? JSON.stringify(error.details) : ''}`);
+        throw new Error(error.error || 'Failed to export batch');
       }
       
       const blob = await response.blob();
@@ -346,7 +371,7 @@ export default function QRCodesPage() {
               >
                 <option value="">All clients</option>
                 {clients.map(client => (
-                  <option key={client.id} value={client.name}>
+                  <option key={client.id} value={client.id}>
                     {client.name}
                   </option>
                 ))}
@@ -511,7 +536,7 @@ export default function QRCodesPage() {
                         </div>
                         
                         <button
-                          onClick={() => exportBatch(batch.batchId)}
+                          onClick={() => exportBatch(batch.batchId, batch.clientId)}
                           disabled={isExporting}
                           className="flex items-center gap-2 px-4 py-2 bg-[#007AFF] text-white rounded-lg hover:bg-[#0056CC] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                         >

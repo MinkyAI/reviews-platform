@@ -210,6 +210,7 @@ export async function GET(request: NextRequest) {
         return {
           batchId: batch.batchId,
           createdAt: batch.createdAt,
+          clientId: batch.clientId,
           clientName: batch.client.name,
           locationName: batch.location?.name,
           totalCodes: qrCodeCount,

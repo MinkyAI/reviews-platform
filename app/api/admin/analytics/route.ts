@@ -253,24 +253,31 @@ export async function GET(request: NextRequest) {
         count: item._count.rating
       })),
       topPerformingClients: await prisma.client.findMany({
-        include: {
-          _count: {
+        select: {
+          id: true,
+          name: true,
+          reviewSubmissions: {
+            where: {
+              createdAt: {
+                gte: startDate
+              }
+            },
             select: {
-              reviewSubmissions: true
+              id: true
             }
           }
         },
-        orderBy: {
-          reviewSubmissions: {
-            _count: 'desc'
-          }
-        },
-        take: 5
-      }).then(clients => clients.map(client => ({
-        id: client.id,
-        name: client.name,
-        reviewCount: client._count.reviewSubmissions
-      })))
+        take: 10
+      }).then(clients => {
+        const clientsWithCount = clients.map(client => ({
+          id: client.id,
+          name: client.name,
+          reviewCount: client.reviewSubmissions.length
+        }))
+        return clientsWithCount
+          .sort((a, b) => b.reviewCount - a.reviewCount)
+          .slice(0, 5)
+      })
     }
 
     return NextResponse.json(analytics)

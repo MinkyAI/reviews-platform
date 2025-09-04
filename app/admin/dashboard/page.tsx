@@ -12,7 +12,7 @@ interface RecentActivity {
   clientName: string
   message: string
   timestamp: string
-  avatar?: string
+  metadata?: Record<string, any>
 }
 
 interface TopClient {
@@ -21,93 +21,57 @@ interface TopClient {
   reviewCount: number
   avgRating: number
   change: number
+  trend: 'up' | 'down' | 'stable'
+  positivePercentage: number
 }
 
 export default function AdminDashboard() {
   const [timeframe] = useState('30d')
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([])
   const [topClients, setTopClients] = useState<TopClient[]>([])
+  const [isLoadingActivity, setIsLoadingActivity] = useState(true)
+  const [isLoadingClients, setIsLoadingClients] = useState(true)
 
+  // Fetch recent activity from API
   useEffect(() => {
-    const mockRecentActivity: RecentActivity[] = [
-      {
-        id: '1',
-        type: 'review',
-        clientName: 'Mario\'s Italian Kitchen',
-        message: 'New 5-star review submitted',
-        timestamp: '2 minutes ago'
-      },
-      {
-        id: '2',
-        type: 'scan',
-        clientName: 'Blue Moon Cafe',
-        message: 'QR code scanned 12 times today',
-        timestamp: '15 minutes ago'
-      },
-      {
-        id: '3',
-        type: 'client',
-        clientName: 'Ocean View Restaurant',
-        message: 'New client onboarded',
-        timestamp: '1 hour ago'
-      },
-      {
-        id: '4',
-        type: 'review',
-        clientName: 'Sunset Grill',
-        message: 'Customer clicked Google Reviews',
-        timestamp: '2 hours ago'
-      },
-      {
-        id: '5',
-        type: 'scan',
-        clientName: 'Downtown Diner',
-        message: 'High scan activity detected',
-        timestamp: '3 hours ago'
+    const fetchActivity = async () => {
+      try {
+        const response = await fetch('/api/admin/activity?limit=10')
+        if (response.ok) {
+          const data = await response.json()
+          setRecentActivity(data.activities || [])
+        }
+      } catch (error) {
+        console.error('Failed to fetch activity:', error)
+      } finally {
+        setIsLoadingActivity(false)
       }
-    ]
+    }
 
-    const mockTopClients: TopClient[] = [
-      {
-        id: '1',
-        name: 'Mario\'s Italian Kitchen',
-        reviewCount: 47,
-        avgRating: 4.8,
-        change: 23.5
-      },
-      {
-        id: '2',
-        name: 'Blue Moon Cafe',
-        reviewCount: 32,
-        avgRating: 4.6,
-        change: 12.3
-      },
-      {
-        id: '3',
-        name: 'Ocean View Restaurant',
-        reviewCount: 28,
-        avgRating: 4.9,
-        change: 18.7
-      },
-      {
-        id: '4',
-        name: 'Sunset Grill',
-        reviewCount: 24,
-        avgRating: 4.4,
-        change: 8.9
-      },
-      {
-        id: '5',
-        name: 'Downtown Diner',
-        reviewCount: 19,
-        avgRating: 4.3,
-        change: -2.1
-      }
-    ]
-
-    setRecentActivity(mockRecentActivity)
-    setTopClients(mockTopClients)
+    fetchActivity()
+    const interval = setInterval(fetchActivity, 30000) // Refresh every 30 seconds
+    return () => clearInterval(interval)
   }, [])
+
+  // Fetch top clients from API
+  useEffect(() => {
+    const fetchTopClients = async () => {
+      try {
+        const response = await fetch(`/api/admin/top-clients?timeframe=${timeframe}&limit=5`)
+        if (response.ok) {
+          const data = await response.json()
+          setTopClients(data.topClients || [])
+        }
+      } catch (error) {
+        console.error('Failed to fetch top clients:', error)
+      } finally {
+        setIsLoadingClients(false)
+      }
+    }
+
+    fetchTopClients()
+  }, [timeframe])
+
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -175,7 +139,14 @@ export default function AdminDashboard() {
           </div>
           
           <div className="space-y-3">
-            {recentActivity.map((activity, index) => (
+            {isLoadingActivity ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="w-6 h-6 border-2 border-[#007AFF] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : recentActivity.length === 0 ? (
+              <p className="text-sm text-slate-500 text-center py-8">No recent activity</p>
+            ) : (
+              recentActivity.map((activity, index) => (
               <motion.div 
                 key={activity.id}
                 initial={{ opacity: 0, y: 10 }}
@@ -198,7 +169,8 @@ export default function AdminDashboard() {
                   </p>
                 </div>
               </motion.div>
-            ))}
+              ))
+            )}
           </div>
         </motion.div>
 

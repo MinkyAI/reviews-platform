@@ -27,6 +27,12 @@ enum CTAType {
   contact_phone
 }
 
+enum ClientUserRole {
+  OWNER
+  MANAGER
+  VIEWER
+}
+
 model Client {
   id                String              @id @default(cuid())
   name              String
@@ -44,6 +50,7 @@ model Client {
   qrScans           QrScan[]
   reviewSubmissions ReviewSubmission[]
   locations         Location[]
+  clientUsers       ClientUser[]
   
   @@index([email])
 }
@@ -177,4 +184,58 @@ model LoginAttempt {
   user      AdminUser? @relation(fields: [email], references: [email])
   
   @@index([email, createdAt])
+}
+
+model ClientUser {
+  id          String         @id @default(cuid())
+  clientId    String
+  email       String
+  name        String
+  role        ClientUserRole @default(VIEWER)
+  isActive    Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  lastLoginAt DateTime?
+  
+  client          Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  sessions        ClientSession[]
+  passwordResets  PasswordReset[]
+  
+  @@unique([clientId, email])
+  @@index([clientId])
+  @@index([email])
+  @@index([isActive])
+}
+
+model ClientSession {
+  id        String   @id @default(cuid())
+  userId    String
+  clientId  String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  
+  user      ClientUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([token])
+  @@index([userId])
+  @@index([clientId])
+  @@index([expiresAt])
+}
+
+model PasswordReset {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  
+  user      ClientUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
 }

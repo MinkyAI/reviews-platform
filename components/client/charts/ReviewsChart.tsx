@@ -12,33 +12,31 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
-  Legend,
+  AreaChart,
   Area,
-  AreaChart
 } from 'recharts'
-import { TrendingUp, Users, MessageSquare } from 'lucide-react'
+import { TrendingUp, BarChart3, Activity } from 'lucide-react'
 
 interface ChartData {
   date: string
-  count: number
-  positive?: number
-  negative?: number
-  neutral?: number
+  scans: number
+  reviews: number
+  formattedDate: string
 }
 
-interface SubmissionsChartProps {
+interface ReviewsChartProps {
   timeframe?: string
   className?: string
 }
 
 interface TooltipProps {
-  active?: boolean;
+  active?: boolean
   payload?: Array<{
-    color: string;
-    dataKey: string;
-    value: number;
-  }>;
-  label?: string | number;
+    color: string
+    dataKey: string
+    value: number
+  }>
+  label?: string | number
 }
 
 const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
@@ -57,7 +55,7 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
               className="w-3 h-3 rounded-full" 
               style={{ backgroundColor: entry.color }}
             />
-            <span className="text-slate-600">{entry.dataKey}:</span>
+            <span className="text-slate-600 capitalize">{entry.dataKey}:</span>
             <span className="font-medium text-slate-900">{entry.value}</span>
           </div>
         ))}
@@ -67,50 +65,80 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
   return null
 }
 
-export default function SubmissionsChart({ 
+export default function ReviewsChart({ 
   timeframe = '30d', 
   className = '' 
-}: SubmissionsChartProps) {
+}: ReviewsChartProps) {
   const [chartData, setChartData] = useState<ChartData[]>([])
   const [loading, setLoading] = useState(true)
   const [chartType, setChartType] = useState<'line' | 'area' | 'bar'>('area')
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true)
-        const response = await fetch(`/api/admin/analytics?timeframe=${timeframe}`)
+        setError(null)
+
+        // Get auth token from localStorage
+        const token = localStorage.getItem('clientAuthToken')
+        if (!token) {
+          throw new Error('No authentication token found')
+        }
+
+        const response = await fetch(`/api/client/analytics?timeframe=${timeframe}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        })
+        
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error('Authentication expired')
+          }
+          throw new Error('Failed to fetch chart data')
+        }
+
         const data = await response.json()
         
-        if (!data || !data.timeSeries || !data.timeSeries.reviews) {
+        if (!data || !data.timeSeries) {
           setChartData([])
           return
         }
         
-        const processedData = data.timeSeries.reviews.map((item: { date: string; count: number }) => {
-          const date = new Date(item.date)
-          const totalSubmissions = item.count
-          
-          const positive = Math.floor(totalSubmissions * 0.7)
-          const negative = Math.floor(totalSubmissions * 0.1)
-          const neutral = totalSubmissions - positive - negative
-          
-          return {
-            date: item.date,
-            count: totalSubmissions,
-            positive,
-            negative,
-            neutral,
-            formattedDate: date.toLocaleDateString('en-US', { 
-              month: 'short', 
-              day: 'numeric' 
-            })
-          }
-        })
+        // Combine scans and reviews data by date
+        const scansMap = new Map(data.timeSeries.scans.map((item: { date: string; count: number }) => [item.date, item.count]))
+        const reviewsMap = new Map(data.timeSeries.reviews.map((item: { date: string; count: number }) => [item.date, item.count]))
+        
+        // Get all unique dates
+        const allDates = new Set([
+          ...data.timeSeries.scans.map((item: { date: string }) => item.date),
+          ...data.timeSeries.reviews.map((item: { date: string }) => item.date)
+        ])
+        
+        const processedData: ChartData[] = Array.from(allDates)
+          .sort()
+          .map((date: string) => {
+            const scans = scansMap.get(date) || 0
+            const reviews = reviewsMap.get(date) || 0
+            const dateObj = new Date(date)
+            
+            return {
+              date,
+              scans: Number(scans),
+              reviews: Number(reviews),
+              formattedDate: dateObj.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric' 
+              })
+            }
+          })
         
         setChartData(processedData)
-      } catch (error) {
-        console.error('Failed to fetch submissions data:', error)
+      } catch (err) {
+        console.error('Failed to fetch chart data:', err)
+        setError(err instanceof Error ? err.message : 'Failed to load chart data')
         setChartData([])
       } finally {
         setLoading(false)
@@ -120,14 +148,15 @@ export default function SubmissionsChart({
     fetchData()
   }, [timeframe])
 
-  const totalSubmissions = chartData.reduce((sum, item) => sum + item.count, 0)
-  const avgDaily = chartData.length > 0 ? Math.round(totalSubmissions / chartData.length) : 0
-  const positiveRate = chartData.reduce((sum, item) => sum + (item.positive || 0), 0) / totalSubmissions * 100 || 0
+  const totalScans = chartData.reduce((sum, item) => sum + item.scans, 0)
+  const totalReviews = chartData.reduce((sum, item) => sum + item.reviews, 0)
+  const conversionRate = totalScans > 0 ? (totalReviews / totalScans) * 100 : 0
+  const avgDailyScans = chartData.length > 0 ? Math.round(totalScans / chartData.length) : 0
 
   const chartTypes = [
-    { type: 'area' as const, label: 'Area', icon: TrendingUp },
+    { type: 'area' as const, label: 'Area', icon: Activity },
     { type: 'line' as const, label: 'Line', icon: TrendingUp },
-    { type: 'bar' as const, label: 'Bar', icon: Users }
+    { type: 'bar' as const, label: 'Bar', icon: BarChart3 }
   ]
 
   const renderChart = () => {
@@ -155,19 +184,19 @@ export default function SubmissionsChart({
             <Tooltip content={<CustomTooltip />} />
             <Line 
               type="monotone" 
-              dataKey="positive" 
-              stroke="#10b981" 
+              dataKey="scans" 
+              stroke="#007AFF" 
               strokeWidth={3}
-              dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
-              activeDot={{ r: 6, stroke: '#10b981', strokeWidth: 2 }}
+              dot={{ fill: '#007AFF', strokeWidth: 2, r: 4 }}
+              activeDot={{ r: 6, stroke: '#007AFF', strokeWidth: 2 }}
             />
             <Line 
               type="monotone" 
-              dataKey="negative" 
-              stroke="#ef4444" 
+              dataKey="reviews" 
+              stroke="#34C759" 
               strokeWidth={3}
-              dot={{ fill: '#ef4444', strokeWidth: 2, r: 4 }}
-              activeDot={{ r: 6, stroke: '#ef4444', strokeWidth: 2 }}
+              dot={{ fill: '#34C759', strokeWidth: 2, r: 4 }}
+              activeDot={{ r: 6, stroke: '#34C759', strokeWidth: 2 }}
             />
           </LineChart>
         )
@@ -188,10 +217,8 @@ export default function SubmissionsChart({
               tick={{ fontSize: 12, fill: '#64748b' }}
             />
             <Tooltip content={<CustomTooltip />} />
-            <Legend />
-            <Bar dataKey="positive" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} />
-            <Bar dataKey="neutral" stackId="a" fill="#64748b" radius={[0, 0, 0, 0]} />
-            <Bar dataKey="negative" stackId="a" fill="#ef4444" radius={[2, 2, 0, 0]} />
+            <Bar dataKey="scans" fill="#007AFF" radius={[2, 2, 0, 0]} />
+            <Bar dataKey="reviews" fill="#34C759" radius={[2, 2, 0, 0]} />
           </BarChart>
         )
       
@@ -200,13 +227,13 @@ export default function SubmissionsChart({
         return (
           <AreaChart {...commonProps}>
             <defs>
-              <linearGradient id="positiveGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                <stop offset="95%" stopColor="#10b981" stopOpacity={0.05}/>
+              <linearGradient id="scansGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#007AFF" stopOpacity={0.3}/>
+                <stop offset="95%" stopColor="#007AFF" stopOpacity={0.05}/>
               </linearGradient>
-              <linearGradient id="negativeGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
-                <stop offset="95%" stopColor="#ef4444" stopOpacity={0.05}/>
+              <linearGradient id="reviewsGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#34C759" stopOpacity={0.3}/>
+                <stop offset="95%" stopColor="#34C759" stopOpacity={0.05}/>
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -224,19 +251,19 @@ export default function SubmissionsChart({
             <Tooltip content={<CustomTooltip />} />
             <Area
               type="monotone"
-              dataKey="positive"
+              dataKey="scans"
               stackId="1"
-              stroke="#10b981"
+              stroke="#007AFF"
               strokeWidth={2}
-              fill="url(#positiveGradient)"
+              fill="url(#scansGradient)"
             />
             <Area
               type="monotone"
-              dataKey="negative"
-              stackId="1"
-              stroke="#ef4444"
+              dataKey="reviews"
+              stackId="2"
+              stroke="#34C759"
               strokeWidth={2}
-              fill="url(#negativeGradient)"
+              fill="url(#reviewsGradient)"
             />
           </AreaChart>
         )
@@ -254,6 +281,17 @@ export default function SubmissionsChart({
     )
   }
 
+  if (error) {
+    return (
+      <div className={`bg-white rounded-xl border border-[#E5E5E7] p-6 ${className}`}>
+        <div className="text-center py-12">
+          <div className="text-red-600 font-medium mb-2">Failed to load chart data</div>
+          <div className="text-red-500 text-sm">{error}</div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -265,11 +303,11 @@ export default function SubmissionsChart({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <div className="flex items-center gap-3">
-            <MessageSquare className="w-5 h-5 text-[#007AFF]" />
-            <h3 className="text-lg font-semibold text-slate-900">Review Submissions</h3>
+            <Activity className="w-5 h-5 text-[#007AFF]" />
+            <h3 className="text-lg font-semibold text-slate-900">Engagement Trends</h3>
           </div>
           <p className="text-sm text-slate-500 mt-1">
-            Positive vs negative review breakdown over time
+            QR code scans vs review submissions over time
           </p>
         </div>
 
@@ -297,17 +335,17 @@ export default function SubmissionsChart({
 
       {/* Stats Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="text-center p-3 bg-slate-50 rounded-lg">
-          <div className="text-2xl font-bold text-slate-900">{totalSubmissions}</div>
-          <div className="text-sm text-slate-600">Total Submissions</div>
+        <div className="text-center p-3 bg-blue-50 rounded-lg">
+          <div className="text-2xl font-bold text-[#007AFF]">{totalScans}</div>
+          <div className="text-sm text-slate-600">Total Scans</div>
         </div>
         <div className="text-center p-3 bg-emerald-50 rounded-lg">
-          <div className="text-2xl font-bold text-emerald-600">{avgDaily}</div>
-          <div className="text-sm text-slate-600">Daily Average</div>
+          <div className="text-2xl font-bold text-emerald-600">{totalReviews}</div>
+          <div className="text-sm text-slate-600">Total Reviews</div>
         </div>
-        <div className="text-center p-3 bg-blue-50 rounded-lg">
-          <div className="text-2xl font-bold text-[#007AFF]">{positiveRate.toFixed(1)}%</div>
-          <div className="text-sm text-slate-600">Positive Rate</div>
+        <div className="text-center p-3 bg-slate-50 rounded-lg">
+          <div className="text-2xl font-bold text-slate-900">{conversionRate.toFixed(1)}%</div>
+          <div className="text-sm text-slate-600">Conversion Rate</div>
         </div>
       </div>
 
